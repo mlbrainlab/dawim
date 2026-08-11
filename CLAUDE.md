@@ -22,11 +22,13 @@ user's real prayer schedule. Duolingo-style structure: tiny daily tasks on a vis
 
 ## Non-negotiables (violating any of these is a failed task)
 
-1. **Quran text integrity.** Mushaf text and its font come ONLY from QUL
+1. **Quran text integrity.** Mushaf text and its fonts come ONLY from QUL
    (Quranic Universal Library, qul.tarteel.ai / Quran.com resources). Never use
    unverified Quran JSON from random repos. Never apply kashida/tatweel, letter
-   spacing, or any styling transformation to Quran text. Render it in KFGQPC
-   Uthmanic Hafs exclusively.
+   spacing, or any styling transformation to Quran text ourselves — the kashida
+   baked into the KFGQPC glyph fonts is the Complex's own print typesetting,
+   not ours, and is the only permitted source of it. Render Quran text in
+   KFGQPC fonts exclusively (see typography system below).
 2. **Font ban.** Roboto and the Noto Naskh family must never render anywhere in the
    app — including default dialogs, AboutDialog, license pages, and error states.
    Set `fontFamily` + `fontFamilyFallback` globally in ThemeData. Any unstyled
@@ -34,7 +36,11 @@ user's real prayer schedule. Duolingo-style structure: tiny daily tasks on a vis
 3. **Typography system.**
    - Titles/headlines: Thmanyah Serif Display (Arabic + Latin).
    - UI/body text: Thmanyah Sans (Arabic + Latin).
-   - Mushaf verses: KFGQPC Uthmanic Hafs only.
+   - Mushaf page view: KFGQPC QPC V4 per-page glyph fonts (1441H print,
+     tajweed edition, from QUL) — 604 fonts, one per page, lazy-loaded at
+     runtime; they carry the print's own line-filling typesetting.
+   - Quran text anywhere outside the page view (future features: shared
+     ayahs, inline quotes): KFGQPC Uthmanic Hafs (Unicode) only.
    - Font files are bundled assets (license permits app embedding). Do not expose
      them for download or reference them from any font CDN.
 4. **One branded UI, both platforms.** Do NOT use platform-adaptive widgets

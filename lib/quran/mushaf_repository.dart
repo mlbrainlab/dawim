@@ -17,7 +17,7 @@ class MushafRepository {
 
   static Future<MushafRepository> load() async {
     final pagesJson =
-        jsonDecode(await rootBundle.loadString('assets/quran/mushaf_v2_pages.json')) as List<dynamic>;
+        jsonDecode(await rootBundle.loadString('assets/quran/mushaf_v4_pages.json')) as List<dynamic>;
     final versesJson =
         jsonDecode(await rootBundle.loadString('assets/quran/verses.json')) as Map<String, dynamic>;
     final surahsJson =

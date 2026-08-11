@@ -1,3 +1,4 @@
+import 'package:dawim/quran/mushaf_font_loader.dart';
 import 'package:dawim/quran/mushaf_repository.dart';
 import 'package:dawim/quran/widgets/mushaf_page_view.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,11 @@ void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     repository = await MushafRepository.load();
+    for (final pageNumber in [3, 565]) {
+      await MushafFontLoader.instance.ensurePageLoaded(
+        repository.pages.firstWhere((p) => p.pageNumber == pageNumber),
+      );
+    }
   });
 
   Future<void> pumpPage(WidgetTester tester, int pageNumber, {required Size viewport}) async {
@@ -31,16 +37,14 @@ void main() {
     tester,
   ) async {
     // Page 3: 15 lines, all type ayah, no surah-name header to shrink the
-    // line budget — the densest, most overflow-prone case (regression test
-    // for a real bug found on-device: RenderFlex overflowed by 68 pixels).
+    // line budget — the densest, most overflow-prone case.
     await pumpPage(tester, 3, viewport: const Size(360, 700));
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the single widest line in the whole mushaf never overflows a phone width', (
+  testWidgets('the page with the longest line in the mushaf never overflows a phone width', (
     tester,
   ) async {
-    // Page 565 has the longest single line (113 chars) across all 604 pages.
     await pumpPage(tester, 565, viewport: const Size(360, 700));
     expect(tester.takeException(), isNull);
   });

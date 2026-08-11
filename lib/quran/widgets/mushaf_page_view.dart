@@ -3,25 +3,25 @@ import 'package:flutter/material.dart';
 import '../../theme/app_fonts.dart';
 import '../models/mushaf_line.dart';
 import '../models/mushaf_page.dart';
+import '../mushaf_font_loader.dart';
 
 const double _referenceFontSize = 24;
-const double _ayahLineHeight = 1.8;
-const double _surahNameFontSize = 22;
-const double _surahNameVerticalPadding = 16;
+const double _ayahLineHeight = 1.7;
+const int _linesPerPage = 15;
 const double _horizontalPadding = 8;
 const double _verticalPadding = 8;
 
-/// Renders a single mushaf page body. Ayah/basmallah lines are rendered
-/// exactly as sourced from QUL, in KFGQPC Uthmanic Hafs — see CLAUDE.md
-/// non-negotiable #1. Like the printed mushaf, non-centered lines are
-/// justified edge-to-edge; the justification stretches only the gaps
-/// between words (TextStyle.wordSpacing). Letterforms, letter spacing, and
-/// kashida are never touched.
+/// Renders a single mushaf page body using the KFGQPC QPC V4 per-page glyph
+/// fonts — the print's own typesetting, so lines fill their width by design
+/// with no justification applied by us (CLAUDE.md non-negotiable #1). The
+/// page's font must already be loaded (MushafFontLoader.ensurePageLoaded)
+/// before this widget builds, or glyphs would measure/render wrong.
 ///
-/// Each line in the source data is a real, precomputed mushaf line break —
-/// it must always render on exactly one physical line, never wrap. The font
-/// size is chosen so the page's widest line exactly fills the available
-/// width (the print behavior), capped by the available height.
+/// Layout mirrors the print: the page height is divided into 15 equal line
+/// slots (vertical overflow is impossible by construction — dense pages use
+/// one Expanded per line). The ornament pages (1-2) have only 8 lines and
+/// render as a compact centered block of fixed-height slots. One data line
+/// always renders as exactly one physical line (softWrap: false).
 class MushafPageView extends StatelessWidget {
   const MushafPageView({super.key, required this.page});
 
@@ -36,16 +36,24 @@ class MushafPageView extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final scale = _fitScale(
-            availableWidth: constraints.maxWidth,
-            availableHeight: constraints.maxHeight,
-          );
+          final slotHeight = constraints.maxHeight / _linesPerPage;
+          final fontSize = _ayahFontSize(constraints.maxWidth, slotHeight);
+          final isSparsePage = page.lines.length < _linesPerPage;
+
           return Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisAlignment: isSparsePage ? MainAxisAlignment.center : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               for (final line in page.lines)
-                _MushafLineWidget(line: line, scale: scale, lineWidth: constraints.maxWidth),
+                if (isSparsePage)
+                  SizedBox(
+                    height: slotHeight,
+                    child: _MushafLineWidget(line: line, page: page, fontSize: fontSize),
+                  )
+                else
+                  Expanded(
+                    child: _MushafLineWidget(line: line, page: page, fontSize: fontSize),
+                  ),
             ],
           );
         },
@@ -53,91 +61,72 @@ class MushafPageView extends StatelessWidget {
     );
   }
 
-  double _fitScale({required double availableWidth, required double availableHeight}) {
-    var naturalHeight = 0.0;
+  /// The page-wide ayah font size: the widest line exactly fills the width,
+  /// capped so a line box always fits its slot.
+  double _ayahFontSize(double availableWidth, double slotHeight) {
     var maxNaturalWidth = 0.0;
     for (final line in page.lines) {
-      if (line.type == MushafLineType.surahName) {
-        naturalHeight += _surahNameFontSize * 1.3 + _surahNameVerticalPadding;
-        continue;
-      }
-      naturalHeight += _referenceFontSize * _ayahLineHeight;
-      final width = _measureLineWidth(line.text!, _referenceFontSize);
-      if (width > maxNaturalWidth) maxNaturalWidth = width;
+      if (line.type == MushafLineType.surahName) continue;
+      final painter = TextPainter(
+        text: TextSpan(
+          text: line.text,
+          style: TextStyle(
+            fontFamily: MushafFontLoader.familyForLine(line, page.pageNumber),
+            fontSize: _referenceFontSize,
+          ),
+        ),
+        textDirection: TextDirection.rtl,
+      )..layout();
+      if (painter.width > maxNaturalWidth) maxNaturalWidth = painter.width;
     }
+    if (maxNaturalWidth <= 0) return _referenceFontSize;
 
-    if (naturalHeight <= 0 || maxNaturalWidth <= 0) return 1;
-
-    // Widest line fills the width exactly; height is a hard cap.
-    final widthScale = availableWidth / maxNaturalWidth;
-    final heightScale = availableHeight / naturalHeight;
-    return (widthScale < heightScale ? widthScale : heightScale).clamp(0.3, 2.0);
+    final widthFit = _referenceFontSize * availableWidth / maxNaturalWidth;
+    final heightFit = slotHeight / _ayahLineHeight;
+    return widthFit < heightFit ? widthFit : heightFit;
   }
 }
 
-double _measureLineWidth(String text, double fontSize, {double wordSpacing = 0}) {
-  final painter = TextPainter(
-    text: TextSpan(
-      text: text,
-      style: TextStyle(fontFamily: AppFonts.quran, fontSize: fontSize, wordSpacing: wordSpacing),
-    ),
-    textDirection: TextDirection.rtl,
-  )..layout();
-  return painter.width;
-}
-
 class _MushafLineWidget extends StatelessWidget {
-  const _MushafLineWidget({required this.line, required this.scale, required this.lineWidth});
+  const _MushafLineWidget({required this.line, required this.page, required this.fontSize});
 
   final MushafLine line;
-  final double scale;
-  final double lineWidth;
+  final MushafPage page;
+  final double fontSize;
 
   @override
   Widget build(BuildContext context) {
     switch (line.type) {
       case MushafLineType.surahName:
-        return Padding(
-          padding: EdgeInsets.symmetric(vertical: _surahNameVerticalPadding * scale / 2),
-          child: Text(
-            line.text!,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: AppFonts.serifDisplay,
-              fontSize: _surahNameFontSize * scale,
-              fontWeight: FontWeight.w500,
+        // FittedBox guarantees the header fits its slot whatever the
+        // Thmanyah metrics are.
+        return Center(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              line.text!,
+              style: TextStyle(
+                fontFamily: AppFonts.serifDisplay,
+                fontSize: fontSize,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         );
       case MushafLineType.basmallah:
       case MushafLineType.ayah:
-        final fontSize = _referenceFontSize * scale;
-        return Text(
-          line.text!,
-          textAlign: line.isCentered ? TextAlign.center : TextAlign.start,
-          softWrap: false,
-          style: TextStyle(
-            fontFamily: AppFonts.quran,
-            fontSize: fontSize,
-            height: _ayahLineHeight,
-            wordSpacing: line.isCentered ? 0 : _justifyWordSpacing(fontSize),
+        return Align(
+          alignment: line.isCentered ? Alignment.center : AlignmentDirectional.centerStart,
+          child: Text(
+            line.text!,
+            softWrap: false,
+            style: TextStyle(
+              fontFamily: MushafFontLoader.familyForLine(line, page.pageNumber),
+              fontSize: fontSize,
+              height: _ayahLineHeight,
+            ),
           ),
         );
     }
-  }
-
-  /// Extra space per word gap so the line exactly fills [lineWidth] —
-  /// print-style justification. Word gaps only; letterforms untouched.
-  double _justifyWordSpacing(double fontSize) {
-    final gaps = ' '.allMatches(line.text!).length;
-    if (gaps == 0) return 0;
-    final naturalWidth = _measureLineWidth(line.text!, fontSize);
-    final extra = lineWidth - naturalWidth - 0.5;
-    if (extra <= 0) return 0;
-    // A short line stretched too far looks broken; cap the gap growth and
-    // let the line stay start-aligned past that point.
-    final perGap = extra / gaps;
-    final maxPerGap = fontSize * 1.5;
-    return perGap > maxPerGap ? 0 : perGap;
   }
 }

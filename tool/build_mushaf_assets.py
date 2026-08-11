@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-"""One-time conversion: join the KFGQPC V2 (1421H) mushaf layout sqlite export
-with the QPC Hafs word-by-word text into a compact per-page/per-line JSON
-asset for the app to bundle.
+"""One-time conversion: join the KFGQPC V4 tajweed (1441H) mushaf layout
+sqlite export with the QPC V4 glyph word-by-word codes into a compact
+per-page/per-line JSON asset for the app to bundle.
+
+Each mushaf page renders with its own KFGQPC font (assets/fonts/qcf4/p{n}.ttf,
+family QCF4_P{n}); the per-word `text` in the glyph JSON is a codepoint that
+only makes sense inside that page's font.
 
 Inputs (raw QUL exports, read from ~/Downloads, never committed to the repo):
-  - qpc-v2-15-lines.db          (resources/mushaf-layout/10, KFGQPC V2 1421H print)
-  - qpc-hafs-word-by-word.json  (resources/quran-script/312)
+  - qpc-v4-tajweed-15-lines.db  (resources/mushaf-layout/19, KFGQPC V4 1441H print)
+  - qpc-v4.json                 (resources/quran-script/47, V4 glyph codes word by word)
   - surah-names.json            (resources/quran-metadata/70)
 
 Output (committed as an app asset):
-  - assets/quran/mushaf_v2_pages.json
+  - assets/quran/mushaf_v4_pages.json
 
 Re-run only if the mushaf edition/layout changes.
 """
@@ -19,12 +23,12 @@ import sqlite3
 from pathlib import Path
 
 DOWNLOADS = Path.home() / "Downloads"
-DB_PATH = DOWNLOADS / "qpc-v2-15-lines.db"
-WORDS_PATH = DOWNLOADS / "qpc-hafs-word-by-word.json"
+DB_PATH = DOWNLOADS / "qpc-v4-tajweed-15-lines.db"
+WORDS_PATH = DOWNLOADS / "qpc-v4.json"
 SURAHS_PATH = DOWNLOADS / "surah-names.json"
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-OUTPUT_PATH = REPO_ROOT / "assets" / "quran" / "mushaf_v2_pages.json"
+OUTPUT_PATH = REPO_ROOT / "assets" / "quran" / "mushaf_v4_pages.json"
 
 
 def load_words():
@@ -44,6 +48,8 @@ def load_surah_names():
 
 def build_basmalah_text(words):
     # Al-Fatihah's own basmalah, words 1-4 (word 5 is the ayah-end marker).
+    # These are page-1 glyphs: the renderer draws basmalah lines with the
+    # QCF4_P1 font on every page.
     return " ".join(words[i]["text"] for i in range(1, 5))
 
 

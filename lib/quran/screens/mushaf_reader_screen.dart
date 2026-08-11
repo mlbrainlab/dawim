@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../theme/app_fonts.dart';
 import '../models/mushaf_page.dart';
+import '../mushaf_font_loader.dart';
 import '../mushaf_providers.dart';
 import '../mushaf_repository.dart';
 import '../widgets/mushaf_page_view.dart';
@@ -40,11 +41,19 @@ class MushafReaderScreen extends ConsumerWidget {
               child: PageView.builder(
                 controller: PageController(initialPage: initialPage - 1),
                 itemCount: repository.pages.length,
-                itemBuilder: (context, index) => _MushafPageFrame(
-                  repository: repository,
-                  page: repository.pages[index],
-                  uiDirection: uiDirection,
-                ),
+                itemBuilder: (context, index) {
+                  // Warm the neighbors' fonts so swiping never shows a gap.
+                  for (final neighbor in [index - 1, index + 1]) {
+                    if (neighbor >= 0 && neighbor < repository.pages.length) {
+                      MushafFontLoader.instance.ensurePageLoaded(repository.pages[neighbor]);
+                    }
+                  }
+                  return _MushafPageFrame(
+                    repository: repository,
+                    page: repository.pages[index],
+                    uiDirection: uiDirection,
+                  );
+                },
               ),
             );
           },
@@ -106,7 +115,17 @@ class _MushafPageFrame extends StatelessWidget {
             Expanded(
               child: Directionality(
                 textDirection: TextDirection.rtl,
-                child: MushafPageView(page: page),
+                child: MushafFontLoader.instance.isPageReady(page.pageNumber)
+                    ? MushafPageView(page: page)
+                    : FutureBuilder<void>(
+                        future: MushafFontLoader.instance.ensurePageLoaded(page),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState != ConnectionState.done) {
+                            return const SizedBox.expand();
+                          }
+                          return MushafPageView(page: page);
+                        },
+                      ),
               ),
             ),
             Align(

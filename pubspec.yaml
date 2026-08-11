@@ -26,6 +26,7 @@ flutter:
 
   assets:
     - assets/quran/
+    - assets/fonts/qcf4/
 
   fonts:
     - family: ThmanyahSerifDisplay
