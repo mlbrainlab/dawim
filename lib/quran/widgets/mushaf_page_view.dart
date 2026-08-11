@@ -4,22 +4,24 @@ import '../../theme/app_fonts.dart';
 import '../models/mushaf_line.dart';
 import '../models/mushaf_page.dart';
 
-const double _ayahFontSize = 24;
+const double _referenceFontSize = 24;
 const double _ayahLineHeight = 1.8;
 const double _surahNameFontSize = 22;
 const double _surahNameVerticalPadding = 16;
-const double _pagePadding = 24; // 12 top + 12 bottom
+const double _horizontalPadding = 8;
+const double _verticalPadding = 8;
 
-/// Renders a single mushaf page. Ayah/basmallah lines are rendered exactly
-/// as sourced from QUL, in KFGQPC Uthmanic Hafs, with no kashida, letter
-/// spacing, or justification applied — see CLAUDE.md non-negotiable #1.
+/// Renders a single mushaf page body. Ayah/basmallah lines are rendered
+/// exactly as sourced from QUL, in KFGQPC Uthmanic Hafs — see CLAUDE.md
+/// non-negotiable #1. Like the printed mushaf, non-centered lines are
+/// justified edge-to-edge; the justification stretches only the gaps
+/// between words (TextStyle.wordSpacing). Letterforms, letter spacing, and
+/// kashida are never touched.
 ///
-/// Each line in the source data is already a real, precomputed mushaf line
-/// break — it must always render on exactly one physical line, never wrap
-/// (wrapping would silently re-break lines the printed mushaf didn't break
-/// there, and would blow past any height budget). Screen sizes vary, so the
-/// font is scaled down just enough that both the widest line fits the
-/// available width and all lines fit the available height.
+/// Each line in the source data is a real, precomputed mushaf line break —
+/// it must always render on exactly one physical line, never wrap. The font
+/// size is chosen so the page's widest line exactly fills the available
+/// width (the print behavior), capped by the available height.
 class MushafPageView extends StatelessWidget {
   const MushafPageView({super.key, required this.page});
 
@@ -28,7 +30,10 @@ class MushafPageView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: _horizontalPadding,
+        vertical: _verticalPadding,
+      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final scale = _fitScale(
@@ -39,7 +44,8 @@ class MushafPageView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (final line in page.lines) _MushafLineWidget(line: line, scale: scale),
+              for (final line in page.lines)
+                _MushafLineWidget(line: line, scale: scale, lineWidth: constraints.maxWidth),
             ],
           );
         },
@@ -55,31 +61,37 @@ class MushafPageView extends StatelessWidget {
         naturalHeight += _surahNameFontSize * 1.3 + _surahNameVerticalPadding;
         continue;
       }
-      naturalHeight += _ayahFontSize * _ayahLineHeight;
-      final painter = TextPainter(
-        text: TextSpan(
-          text: line.text,
-          style: const TextStyle(fontFamily: AppFonts.quran, fontSize: _ayahFontSize),
-        ),
-        textDirection: TextDirection.rtl,
-      )..layout();
-      if (painter.width > maxNaturalWidth) maxNaturalWidth = painter.width;
+      naturalHeight += _referenceFontSize * _ayahLineHeight;
+      final width = _measureLineWidth(line.text!, _referenceFontSize);
+      if (width > maxNaturalWidth) maxNaturalWidth = width;
     }
 
-    if (naturalHeight <= 0) return 1;
+    if (naturalHeight <= 0 || maxNaturalWidth <= 0) return 1;
 
-    final heightScale = (availableHeight - _pagePadding) / naturalHeight;
-    final widthScale = maxNaturalWidth <= 0 ? 1.0 : availableWidth / maxNaturalWidth;
-
-    return [heightScale, widthScale, 1.0].reduce((a, b) => a < b ? a : b).clamp(0.3, 1.0);
+    // Widest line fills the width exactly; height is a hard cap.
+    final widthScale = availableWidth / maxNaturalWidth;
+    final heightScale = availableHeight / naturalHeight;
+    return (widthScale < heightScale ? widthScale : heightScale).clamp(0.3, 2.0);
   }
 }
 
+double _measureLineWidth(String text, double fontSize, {double wordSpacing = 0}) {
+  final painter = TextPainter(
+    text: TextSpan(
+      text: text,
+      style: TextStyle(fontFamily: AppFonts.quran, fontSize: fontSize, wordSpacing: wordSpacing),
+    ),
+    textDirection: TextDirection.rtl,
+  )..layout();
+  return painter.width;
+}
+
 class _MushafLineWidget extends StatelessWidget {
-  const _MushafLineWidget({required this.line, required this.scale});
+  const _MushafLineWidget({required this.line, required this.scale, required this.lineWidth});
 
   final MushafLine line;
   final double scale;
+  final double lineWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -99,16 +111,33 @@ class _MushafLineWidget extends StatelessWidget {
         );
       case MushafLineType.basmallah:
       case MushafLineType.ayah:
+        final fontSize = _referenceFontSize * scale;
         return Text(
           line.text!,
           textAlign: line.isCentered ? TextAlign.center : TextAlign.start,
           softWrap: false,
           style: TextStyle(
             fontFamily: AppFonts.quran,
-            fontSize: _ayahFontSize * scale,
+            fontSize: fontSize,
             height: _ayahLineHeight,
+            wordSpacing: line.isCentered ? 0 : _justifyWordSpacing(fontSize),
           ),
         );
     }
+  }
+
+  /// Extra space per word gap so the line exactly fills [lineWidth] —
+  /// print-style justification. Word gaps only; letterforms untouched.
+  double _justifyWordSpacing(double fontSize) {
+    final gaps = ' '.allMatches(line.text!).length;
+    if (gaps == 0) return 0;
+    final naturalWidth = _measureLineWidth(line.text!, fontSize);
+    final extra = lineWidth - naturalWidth - 0.5;
+    if (extra <= 0) return 0;
+    // A short line stretched too far looks broken; cap the gap growth and
+    // let the line stay start-aligned past that point.
+    final perGap = extra / gaps;
+    final maxPerGap = fontSize * 1.5;
+    return perGap > maxPerGap ? 0 : perGap;
   }
 }

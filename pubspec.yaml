@@ -61,3 +61,9 @@ flutter_launcher_icons:
   ios: true
   remove_alpha_ios: true
   image_path: assets/icon/dawim01.png
+  # Without adaptive layers, Android launchers letterbox the legacy icon in
+  # a white circle. Foreground is the icon at 85% on a transparent canvas
+  # (the mask crops the outer ~33%, so the green fills the whole shape);
+  # background matches the icon's edge green for any mask peek-through.
+  adaptive_icon_background: "#2A5C47"
+  adaptive_icon_foreground: assets/icon/dawim01_adaptive_fg.png

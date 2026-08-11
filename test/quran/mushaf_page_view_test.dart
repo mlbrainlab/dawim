@@ -1,3 +1,4 @@
+import 'package:dawim/l10n/generated/app_localizations.dart';
 import 'package:dawim/quran/mushaf_providers.dart';
 import 'package:dawim/quran/mushaf_repository.dart';
 import 'package:dawim/quran/screens/mushaf_reader_screen.dart';
@@ -17,7 +18,11 @@ Future<Widget> _appWithLoadedRepository(WidgetTester tester) async {
   final repository = await tester.runAsync(() => MushafRepository.load());
   return ProviderScope(
     overrides: [mushafRepositoryProvider.overrideWith((ref) => repository!)],
-    child: const MaterialApp(home: MushafReaderScreen()),
+    child: const MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: MushafReaderScreen(),
+    ),
   );
 }
 

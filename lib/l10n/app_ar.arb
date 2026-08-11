@@ -3,5 +3,6 @@
   "appTitle": "داوِم",
   "tagline": "أدومها وإن قلّ",
   "placeholderScaffoldMessage": "الهيكل الأساسي للمرحلة الأولى جاهز.",
-  "openMushafButton": "فتح المصحف"
+  "openMushafButton": "فتح المصحف",
+  "juzHeaderLabel": "الجزء {juzNumber}"
 }

@@ -14,4 +14,9 @@ class MushafPage {
 
   final int pageNumber;
   final List<MushafLine> lines;
+
+  /// Verse key of the first ayah on this page, e.g. '2:6'. Every page has at
+  /// least one ayah line.
+  String get firstVerseKey =>
+      lines.firstWhere((l) => l.type == MushafLineType.ayah).verseKeys!.first;
 }
