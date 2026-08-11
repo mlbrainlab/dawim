@@ -66,12 +66,21 @@ user's real prayer schedule. Duolingo-style structure: tiny daily tasks on a vis
   user's locale; never guilt-based. Reschedule on timezone/location change.
 - **Streaks:** daily streak based on completing the day's reading slots. Streak
   state must survive app reinstall-free scenarios (persist robustly locally).
+- **Home-screen widget (native):** Android App Widget + iOS WidgetKit widget,
+  2x2 or 4x2 size, showing today's reading progress (slots completed /
+  total), this month's khatmah progress (juz' completed / 30), and the
+  current daily streak. Icon/accent color shifts when the user is "late" on
+  today's reading (a scheduled slot's window has passed uncompleted) vs
+  on-track/complete — visual state only, no guilt-based copy (consistent
+  with the notification tone rule above). Reads the same locally persisted
+  state as the app; updates on app-state change and at minimum once daily.
+  Tapping the widget opens the app — no interactive actions inside the
+  widget itself.
 - **Localization:** flutter_localizations + ARB files, en + ar complete at all
   times. No hardcoded strings.
 
 ## Explicitly OUT of v1 (do not build, do not scaffold)
 
-- Analytics dashboards / usage charts
 - Social features, leaderboards, sharing
 - Voice/recitation recognition
 - Audio playback
@@ -87,6 +96,11 @@ user's real prayer schedule. Duolingo-style structure: tiny daily tasks on a vis
   for trivial flags.
 - **Packages expected:** adhan_dart, flutter_local_notifications, geolocator,
   intl/flutter_localizations. Justify any addition beyond these in one line.
+- **Home-screen widget:** `home_widget` (bridges Flutter state to native
+  Android App Widget / iOS WidgetKit — Flutter has no first-party
+  home-screen-widget API; this is the standard community bridge), plus
+  native widget code in `android/app/src/main/kotlin/.../widget/` and an
+  `ios/HomeWidgetExtension/` target.
 - **Never sync/commit:** `build/`, `.dart_tool/`, `ios/Pods/` (default Flutter
   .gitignore covers this — keep it intact).
 
@@ -107,5 +121,8 @@ user's real prayer schedule. Duolingo-style structure: tiny daily tasks on a vis
 4. Timer + page-progress tracking + streak persistence
 5. Prayer times (adhan_dart) + local notifications with encouraging copy
 6. Home screen: 30-node progress path + today's task card
+7. Home-screen widget: native Android App Widget + iOS WidgetKit surfacing
+   daily/monthly progress and streak, wired to the same persisted state as
+   the app.
 
 Work milestone by milestone. At the end of each, the app must run on a device.

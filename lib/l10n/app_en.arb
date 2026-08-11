@@ -1,0 +1,15 @@
+{
+  "@@locale": "en",
+  "appTitle": "Dawim",
+  "@appTitle": {
+    "description": "The app's display name, shown in Latin contexts."
+  },
+  "tagline": "Constant, even if small.",
+  "@tagline": {
+    "description": "Verbatim tagline from the hadith «أحب الأعمال إلى الله أدومها وإن قلّ» (al-Bukhari & Muslim). Never paraphrase this string."
+  },
+  "placeholderScaffoldMessage": "Milestone 1 scaffold ready.",
+  "@placeholderScaffoldMessage": {
+    "description": "Temporary placeholder-screen message, removed once the real home screen (milestone 6) exists."
+  }
+}

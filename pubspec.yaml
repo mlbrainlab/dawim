@@ -1,0 +1,49 @@
+name: dawim
+description: "Dawim — daily Quran reading habit app. Constant, even if small."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  fonts:
+    - family: ThmanyahSerifDisplay
+      fonts:
+        - asset: assets/fonts/ThmanyahSerifDisplay-Light.otf
+          weight: 300
+        - asset: assets/fonts/ThmanyahSerifDisplay-Regular.otf
+          weight: 400
+        - asset: assets/fonts/ThmanyahSerifDisplay-Medium.otf
+          weight: 500
+        - asset: assets/fonts/ThmanyahSerifDisplay-Bold.otf
+          weight: 700
+        - asset: assets/fonts/ThmanyahSerifDisplay-Black.otf
+          weight: 900
+    - family: ThmanyahSans
+      fonts:
+        - asset: assets/fonts/ThmanyahSans-Light.otf
+          weight: 300
+        - asset: assets/fonts/ThmanyahSans-Regular.otf
+          weight: 400
+        - asset: assets/fonts/ThmanyahSans-Medium.otf
+          weight: 500
+        - asset: assets/fonts/ThmanyahSans-Bold.otf
+          weight: 700
+        - asset: assets/fonts/ThmanyahSans-Black.otf
+          weight: 900
