@@ -30,6 +30,20 @@ class AppStateNotifier extends AsyncNotifier<DawimState> {
     return _update((current) => current.withSlotCompleted(juzNumber, slotIndex));
   }
 
+  /// Undoes a mis-tap. Reading evidence survives, so the slot can be
+  /// re-marked without reading it again.
+  Future<void> undoSlotComplete(int juzNumber, int slotIndex) {
+    return _update((current) => current.withSlotUncompleted(juzNumber, slotIndex));
+  }
+
+  Future<void> notePageViewed(int juzNumber, int slotIndex, int page) {
+    return _update((current) => current.withPageViewed(juzNumber, slotIndex, page));
+  }
+
+  Future<void> noteSecondsRead(int juzNumber, int slotIndex, int page, int seconds) {
+    return _update((current) => current.withSecondsOnPage(juzNumber, slotIndex, page, seconds));
+  }
+
   Future<void> _update(DawimState Function(DawimState) transform) async {
     final repository = await ref.read(appStateRepositoryProvider.future);
     final next = transform(state.requireValue);

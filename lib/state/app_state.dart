@@ -1,4 +1,5 @@
 import '../plan/reading_schedule.dart';
+import 'slot_progress.dart';
 
 /// The whole persisted state of the app, as one serializable document
 /// (CLAUDE.md non-negotiable #5) so cloud sync can later upload it as-is.
@@ -9,10 +10,12 @@ class DawimState {
     this.khatmahStartedOn,
     this.completedJuz = const {},
     this.completedSlotsByJuz = const {},
+    this.slotProgress = const {},
   });
 
   factory DawimState.fromJson(Map<String, dynamic> json) {
     final rawSlots = (json['completedSlotsByJuz'] as Map<String, dynamic>?) ?? const {};
+    final rawProgress = (json['slotProgress'] as Map<String, dynamic>?) ?? const {};
     return DawimState(
       schemaVersion: json['schemaVersion'] as int? ?? currentSchemaVersion,
       schedule: ReadingSchedule.fromName(json['schedule'] as String?),
@@ -29,8 +32,13 @@ class DawimState {
           (slots as List<dynamic>).map((e) => e as int).toSet(),
         ),
       ),
+      slotProgress: rawProgress.map(
+        (key, value) => MapEntry(key, SlotProgress.fromJson(value as Map<String, dynamic>)),
+      ),
     );
   }
+
+  static String slotKey(int juzNumber, int slotIndex) => '$juzNumber:$slotIndex';
 
   /// Bumped whenever the persisted shape changes; read before parsing so a
   /// future version can migrate rather than guess.
@@ -43,12 +51,20 @@ class DawimState {
   /// Juz' the reader has finished, 1-30.
   final Set<int> completedJuz;
 
-  /// Slot indices finished per juz', for juz' still in progress.
+  /// Slot indices the reader has marked done, per juz'. Kept even after the
+  /// juz' completes so the final slot stays undoable; [completedJuz] remains
+  /// the authority on whether a juz' is finished.
   final Map<int, Set<int>> completedSlotsByJuz;
+
+  /// Reading evidence per slot, keyed by [slotKey].
+  final Map<String, SlotProgress> slotProgress;
 
   bool get hasSchedule => schedule != null;
 
   Set<int> completedSlotsFor(int juzNumber) => completedSlotsByJuz[juzNumber] ?? const {};
+
+  SlotProgress progressFor(int juzNumber, int slotIndex) =>
+      slotProgress[slotKey(juzNumber, slotIndex)] ?? const SlotProgress();
 
   Map<String, dynamic> toJson() => {
     'schemaVersion': schemaVersion,
@@ -58,6 +74,9 @@ class DawimState {
     'completedSlotsByJuz': {
       for (final entry in completedSlotsByJuz.entries)
         '${entry.key}': entry.value.toList()..sort(),
+    },
+    'slotProgress': {
+      for (final entry in slotProgress.entries) entry.key: entry.value.toJson(),
     },
   };
 
@@ -70,19 +89,15 @@ class DawimState {
     if (currentSchedule == null || completedSlotsByJuz.isEmpty) return this;
 
     final finished = {...completedJuz};
-    final inProgress = <int, Set<int>>{};
     for (final entry in completedSlotsByJuz.entries) {
-      if (entry.value.length >= currentSchedule.slotCount) {
-        finished.add(entry.key);
-      } else {
-        inProgress[entry.key] = entry.value;
-      }
+      if (entry.value.length >= currentSchedule.slotCount) finished.add(entry.key);
     }
+    if (finished.length == completedJuz.length) return this;
 
-    return copyWith(completedJuz: finished, completedSlotsByJuz: inProgress);
+    return copyWith(completedJuz: finished);
   }
 
-  /// Applies a schedule choice. Any *in-progress* slot record is dropped:
+  /// Applies a schedule choice. Records for *unfinished* juz' are dropped:
   /// slots are recorded by index, and index 0 of a 2-slot plan covers
   /// different pages than index 0 of a 4-slot plan, so carrying them over
   /// would both overstate progress and strand the juz' in a state where
@@ -95,33 +110,73 @@ class DawimState {
       schedule: newSchedule,
       khatmahStartedOn: khatmahStartedOn ?? now,
       completedJuz: completedJuz,
-      completedSlotsByJuz: const {},
+      completedSlotsByJuz: {
+        for (final entry in completedSlotsByJuz.entries)
+          if (completedJuz.contains(entry.key)) entry.key: entry.value,
+      },
+      slotProgress: {
+        for (final entry in slotProgress.entries)
+          if (completedJuz.contains(_juzOfKey(entry.key))) entry.key: entry.value,
+      },
     );
   }
 
-  /// Records a finished slot. Completing the last slot of a juz' promotes it
-  /// to a finished juz' and clears its per-slot record.
+  /// Records a finished slot. Completing the last slot of a juz' finishes the
+  /// juz'; the per-slot record is kept so the slot stays undoable.
   DawimState withSlotCompleted(int juzNumber, int slotIndex) {
     final currentSchedule = schedule;
     if (currentSchedule == null) return this;
 
     final slots = {...completedSlotsFor(juzNumber), slotIndex};
-    if (slots.length >= currentSchedule.slotCount) {
-      return copyWith(
-        completedJuz: {...completedJuz, juzNumber},
-        completedSlotsByJuz: {...completedSlotsByJuz}..remove(juzNumber),
-      );
-    }
     return copyWith(
+      completedJuz: slots.length >= currentSchedule.slotCount
+          ? {...completedJuz, juzNumber}
+          : completedJuz,
       completedSlotsByJuz: {...completedSlotsByJuz, juzNumber: slots},
     );
   }
+
+  /// Undoes a slot the reader marked done — for the mis-tap. Only the *claim*
+  /// is retracted: the reading evidence in [slotProgress] is untouched, so the
+  /// slot can be re-marked immediately without reading it again. If that slot
+  /// had finished the juz', the juz' reopens too.
+  DawimState withSlotUncompleted(int juzNumber, int slotIndex) {
+    final slots = {...completedSlotsFor(juzNumber)}..remove(slotIndex);
+    return copyWith(
+      completedJuz: {...completedJuz}..remove(juzNumber),
+      completedSlotsByJuz: {...completedSlotsByJuz, juzNumber: slots},
+    );
+  }
+
+  /// Notes that a page of a slot was shown, and remembers it as the resume
+  /// point.
+  DawimState withPageViewed(int juzNumber, int slotIndex, int page) {
+    final key = slotKey(juzNumber, slotIndex);
+    return copyWith(
+      slotProgress: {...slotProgress, key: progressFor(juzNumber, slotIndex).withPageViewed(page)},
+    );
+  }
+
+  /// Adds verified reading seconds to a page of a slot.
+  DawimState withSecondsOnPage(int juzNumber, int slotIndex, int page, int seconds) {
+    if (seconds <= 0) return this;
+    final key = slotKey(juzNumber, slotIndex);
+    return copyWith(
+      slotProgress: {
+        ...slotProgress,
+        key: progressFor(juzNumber, slotIndex).withSecondsOnPage(page, seconds),
+      },
+    );
+  }
+
+  static int _juzOfKey(String key) => int.parse(key.split(':').first);
 
   DawimState copyWith({
     ReadingSchedule? schedule,
     DateTime? khatmahStartedOn,
     Set<int>? completedJuz,
     Map<int, Set<int>>? completedSlotsByJuz,
+    Map<String, SlotProgress>? slotProgress,
   }) {
     return DawimState(
       schemaVersion: schemaVersion,
@@ -129,6 +184,7 @@ class DawimState {
       khatmahStartedOn: khatmahStartedOn ?? this.khatmahStartedOn,
       completedJuz: completedJuz ?? this.completedJuz,
       completedSlotsByJuz: completedSlotsByJuz ?? this.completedSlotsByJuz,
+      slotProgress: slotProgress ?? this.slotProgress,
     );
   }
 }

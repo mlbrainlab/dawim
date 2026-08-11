@@ -117,5 +117,35 @@
   "changeSchedule": "Change rhythm",
   "@changeSchedule": {
     "description": "Action opening the schedule selection screen again."
+  },
+  "slotReadingProgress": "Page {pagesRead} of {pageCount} · {secondsRead} of {secondsRequired}",
+  "@slotReadingProgress": {
+    "description": "Live progress on a reading slot: pages covered and verified reading time, e.g. 'Page 4 of 6 · 1:20 of 3:00'.",
+    "placeholders": {
+      "pagesRead": {
+        "type": "String"
+      },
+      "pageCount": {
+        "type": "String"
+      },
+      "secondsRead": {
+        "type": "String"
+      },
+      "secondsRequired": {
+        "type": "String"
+      }
+    }
+  },
+  "slotReadyToFinish": "Ready to finish",
+  "@slotReadyToFinish": {
+    "description": "Shown on a slot whose reading requirement is met but which has not been marked done."
+  },
+  "undoSlotDone": "Undo",
+  "@undoSlotDone": {
+    "description": "Action reversing a slot that was marked done, for a mis-tap."
+  },
+  "todayReadingComplete": "Today's reading is complete",
+  "@todayReadingComplete": {
+    "description": "Shown when every slot of the day's juz' is finished."
   }
 }

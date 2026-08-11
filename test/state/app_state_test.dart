@@ -63,7 +63,67 @@ void main() {
 
       state = state.withSlotCompleted(1, 3);
       expect(state.completedJuz, {1});
-      expect(state.completedSlotsFor(1), isEmpty, reason: 'per-slot record is folded into the juz');
+      expect(
+        state.completedSlotsFor(1),
+        {0, 1, 2, 3},
+        reason: 'the record is kept so the final slot stays undoable',
+      );
+    });
+  });
+
+  group('withSlotUncompleted', () {
+    test('retracts the claim but keeps the reading evidence', () {
+      final read = const DawimState(schedule: ReadingSchedule.fourSlots)
+          .withPageViewed(1, 0, 3)
+          .withSecondsOnPage(1, 0, 3, 45)
+          .withSlotCompleted(1, 0);
+      expect(read.completedSlotsFor(1), {0});
+
+      final undone = read.withSlotUncompleted(1, 0);
+      expect(undone.completedSlotsFor(1), isEmpty);
+      expect(
+        undone.progressFor(1, 0).secondsByPage,
+        {3: 45},
+        reason: 'an accidental undo must not force a re-read',
+      );
+    });
+
+    test('reopens a juz when its finishing slot is undone', () {
+      var state = const DawimState(schedule: ReadingSchedule.twoSlots)
+          .withSlotCompleted(2, 0)
+          .withSlotCompleted(2, 1);
+      expect(state.completedJuz, {2});
+
+      state = state.withSlotUncompleted(2, 1);
+      expect(state.completedJuz, isEmpty);
+      expect(state.completedSlotsFor(2), {0});
+    });
+  });
+
+  group('reading progress', () {
+    test('round-trips through JSON', () {
+      final original = const DawimState(schedule: ReadingSchedule.twoSlots)
+          .withPageViewed(3, 1, 50)
+          .withSecondsOnPage(3, 1, 50, 20)
+          .withSecondsOnPage(3, 1, 51, 15);
+
+      final restored = DawimState.fromJson(original.toJson());
+      final progress = restored.progressFor(3, 1);
+      expect(progress.secondsByPage, {50: 20, 51: 15});
+      expect(progress.lastPage, 50);
+    });
+
+    test('viewing a page records it and remembers the resume point', () {
+      final state = const DawimState().withPageViewed(1, 0, 5);
+      expect(state.progressFor(1, 0).visitedPages, {5});
+      expect(state.progressFor(1, 0).lastPage, 5);
+    });
+
+    test('re-viewing a page keeps its accrued seconds', () {
+      final state = const DawimState()
+          .withSecondsOnPage(1, 0, 5, 30)
+          .withPageViewed(1, 0, 5);
+      expect(state.progressFor(1, 0).secondsByPage, {5: 30});
     });
   });
 
@@ -127,7 +187,6 @@ void main() {
 
       final repaired = stranded.normalized();
       expect(repaired.completedJuz, {1, 2});
-      expect(repaired.completedSlotsFor(2), isEmpty);
     });
 
     test('leaves genuinely partial progress alone', () {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/digits.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../plan/reading_session.dart';
 import '../../theme/app_fonts.dart';
 import '../models/mushaf_page.dart';
 import '../mushaf_font_loader.dart';
@@ -12,13 +13,52 @@ import '../widgets/mushaf_page_view.dart';
 
 /// Mushaf page order is always right-to-left, regardless of the app's
 /// current UI locale. Header/footer chrome follows the UI locale.
-class MushafReaderScreen extends ConsumerWidget {
-  const MushafReaderScreen({super.key, this.initialPage = 1});
+///
+/// Passing [slotRef] turns this into a tracked reading session: pages viewed
+/// and verified seconds are recorded against that slot. Without it (the plain
+/// "open the mushaf" entry) nothing is tracked.
+class MushafReaderScreen extends ConsumerStatefulWidget {
+  const MushafReaderScreen({super.key, this.initialPage = 1, this.slotRef});
 
   final int initialPage;
+  final ReadingSlotRef? slotRef;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MushafReaderScreen> createState() => _MushafReaderScreenState();
+}
+
+class _MushafReaderScreenState extends ConsumerState<MushafReaderScreen> {
+  late final PageController _controller;
+  ReadingSessionController? _session;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController(initialPage: widget.initialPage - 1);
+
+    final slotRef = widget.slotRef;
+    if (slotRef != null) {
+      _session = ReadingSessionController(
+        ref: ref,
+        slotRef: slotRef,
+        initialPage: widget.initialPage,
+      );
+      // The page the reader opens on counts as visited too.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _session?.onPageChanged(widget.initialPage);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _session?.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final repositoryAsync = ref.watch(mushafRepositoryProvider);
     final uiDirection = Directionality.of(context);
 
@@ -29,8 +69,10 @@ class MushafReaderScreen extends ConsumerWidget {
             return Directionality(
               textDirection: TextDirection.rtl,
               child: PageView.builder(
-                controller: PageController(initialPage: initialPage - 1),
+                controller: _controller,
                 itemCount: repository.pages.length,
+                onPageChanged: (index) =>
+                    _session?.onPageChanged(repository.pages[index].pageNumber),
                 itemBuilder: (context, index) {
                   // Warm the neighbors' fonts so swiping never shows a gap.
                   for (final neighbor in [index - 1, index + 1]) {

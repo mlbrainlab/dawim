@@ -24,5 +24,9 @@
   "markSlotDone": "تسجيل الإتمام",
   "khatmahCompleteTitle": "تمّت الختمة",
   "khatmahCompleteBody": "ثلاثون جزءًا قُرئت. تقبّل الله.",
-  "changeSchedule": "تغيير الإيقاع"
+  "changeSchedule": "تغيير الإيقاع",
+  "slotReadingProgress": "صفحة {pagesRead} من {pageCount} · {secondsRead} من {secondsRequired}",
+  "slotReadyToFinish": "جاهز للإتمام",
+  "undoSlotDone": "تراجع",
+  "todayReadingComplete": "اكتمل ورد اليوم"
 }
