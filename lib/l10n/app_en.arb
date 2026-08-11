@@ -11,5 +11,9 @@
   "placeholderScaffoldMessage": "Milestone 1 scaffold ready.",
   "@placeholderScaffoldMessage": {
     "description": "Temporary placeholder-screen message, removed once the real home screen (milestone 6) exists."
+  },
+  "openMushafButton": "Open the mushaf",
+  "@openMushafButton": {
+    "description": "Temporary placeholder-screen button opening the mushaf reader, removed once the real home screen (milestone 6) exists."
   }
 }

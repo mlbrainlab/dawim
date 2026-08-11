@@ -12,15 +12,20 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
+  flutter_riverpod: ^2.6.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
 
 flutter:
   uses-material-design: true
   generate: true
+
+  assets:
+    - assets/quran/
 
   fonts:
     - family: ThmanyahSerifDisplay
@@ -47,3 +52,12 @@ flutter:
           weight: 700
         - asset: assets/fonts/ThmanyahSans-Black.otf
           weight: 900
+    - family: UthmanicHafs
+      fonts:
+        - asset: assets/fonts/UthmanicHafs_V22.ttf
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  image_path: assets/icon/dawim01.png
