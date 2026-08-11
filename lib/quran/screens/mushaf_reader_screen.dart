@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/digits.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../theme/app_fonts.dart';
 import '../models/mushaf_page.dart';
@@ -8,17 +9,6 @@ import '../mushaf_font_loader.dart';
 import '../mushaf_providers.dart';
 import '../mushaf_repository.dart';
 import '../widgets/mushaf_page_view.dart';
-
-const _easternArabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-
-String _localizedDigits(int number, Locale locale) {
-  final raw = '$number';
-  if (locale.languageCode != 'ar') return raw;
-  return raw.split('').map((c) {
-    final digit = int.tryParse(c);
-    return digit == null ? c : _easternArabicDigits[digit];
-  }).join();
-}
 
 /// Mushaf page order is always right-to-left, regardless of the app's
 /// current UI locale. Header/footer chrome follows the UI locale.
@@ -107,7 +97,7 @@ class _MushafPageFrame extends StatelessWidget {
               children: [
                 Text(surahName, style: chromeStyle),
                 Text(
-                  l10n.juzHeaderLabel(_localizedDigits(juzNumber, locale)),
+                  l10n.juzHeaderLabel(localizedDigits(juzNumber, locale)),
                   style: chromeStyle,
                 ),
               ],
@@ -136,7 +126,7 @@ class _MushafPageFrame extends StatelessWidget {
                   border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.4)),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(_localizedDigits(page.pageNumber, locale), style: chromeStyle),
+                child: Text(localizedDigits(page.pageNumber, locale), style: chromeStyle),
               ),
             ),
           ],

@@ -59,6 +59,31 @@ class MushafRepository {
 
   Surah? surahByNumber(int surahNumber) => _surahsById[surahNumber];
 
+  /// The mushaf page range a juz' spans, inclusive. Derived from the juz'
+  /// boundaries rather than stored: a juz' starts on the page carrying its
+  /// first verse and runs until the page before the next juz' starts (or
+  /// the last page, for juz' 30).
+  ({int firstPage, int lastPage}) pageRangeForJuz(int juzNumber) {
+    final firstPage = _firstPageOfJuz(juzNumber);
+    final lastPage = juzNumber < _juzList.length
+        ? _firstPageOfJuz(juzNumber + 1) - 1
+        : pages.last.pageNumber;
+    return (firstPage: firstPage, lastPage: lastPage);
+  }
+
+  int _firstPageOfJuz(int juzNumber) {
+    final firstVerseKey = _juzList
+        .firstWhere((j) => j.juzNumber == juzNumber)
+        .firstVerseKey;
+    return pages
+        .firstWhere(
+          (page) => page.lines.any(
+            (line) => line.verseKeys?.contains(firstVerseKey) ?? false,
+          ),
+        )
+        .pageNumber;
+  }
+
   /// The juz' (1-30) that a given verse belongs to, or null if not found.
   int? juzNumberForVerse(String verseKey) {
     final parts = verseKey.split(':');

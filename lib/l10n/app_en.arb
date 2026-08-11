@@ -24,5 +24,98 @@
         "type": "String"
       }
     }
+  },
+  "scheduleSelectionTitle": "Choose your daily rhythm",
+  "@scheduleSelectionTitle": {
+    "description": "Title of the screen where the user picks their reading schedule."
+  },
+  "scheduleSelectionSubtitle": "Twenty minutes a day, either way. Pick what fits your day — you can change it later.",
+  "@scheduleSelectionSubtitle": {
+    "description": "Supporting text under the schedule selection title."
+  },
+  "scheduleTwoSlotsName": "Two sittings",
+  "@scheduleTwoSlotsName": {
+    "description": "Name of the 2-slot reading schedule."
+  },
+  "scheduleTwoSlotsDescription": "10 minutes in the morning, 10 in the evening.",
+  "@scheduleTwoSlotsDescription": {
+    "description": "Description of the 2-slot reading schedule."
+  },
+  "scheduleFourSlotsName": "Four sittings",
+  "@scheduleFourSlotsName": {
+    "description": "Name of the 4-slot reading schedule."
+  },
+  "scheduleFourSlotsDescription": "5 minutes after each of Dhuhr, Asr, Maghrib and Isha.",
+  "@scheduleFourSlotsDescription": {
+    "description": "Description of the 4-slot reading schedule."
+  },
+  "todayPlanTitle": "Today's reading",
+  "@todayPlanTitle": {
+    "description": "Title of the screen showing the day's reading task."
+  },
+  "todayJuzLabel": "Juz' {juzNumber}",
+  "@todayJuzLabel": {
+    "description": "Label naming the juz' that is today's task.",
+    "placeholders": {
+      "juzNumber": {
+        "type": "String"
+      }
+    }
+  },
+  "slotPagesLabel": "Pages {firstPage}–{lastPage}",
+  "@slotPagesLabel": {
+    "description": "The mushaf page range a reading slot covers.",
+    "placeholders": {
+      "firstPage": {
+        "type": "String"
+      },
+      "lastPage": {
+        "type": "String"
+      }
+    }
+  },
+  "slotAnchorMorning": "Morning",
+  "@slotAnchorMorning": {
+    "description": "Name of the morning reading slot."
+  },
+  "slotAnchorEvening": "Evening",
+  "@slotAnchorEvening": {
+    "description": "Name of the evening reading slot."
+  },
+  "slotAnchorAfterDhuhr": "After Dhuhr",
+  "@slotAnchorAfterDhuhr": {
+    "description": "Name of the reading slot following the Dhuhr prayer."
+  },
+  "slotAnchorAfterAsr": "After Asr",
+  "@slotAnchorAfterAsr": {
+    "description": "Name of the reading slot following the Asr prayer."
+  },
+  "slotAnchorAfterMaghrib": "After Maghrib",
+  "@slotAnchorAfterMaghrib": {
+    "description": "Name of the reading slot following the Maghrib prayer."
+  },
+  "slotAnchorAfterIsha": "After Isha",
+  "@slotAnchorAfterIsha": {
+    "description": "Name of the reading slot following the Isha prayer."
+  },
+  "slotDone": "Done",
+  "@slotDone": {
+    "description": "Marks a reading slot the user has already completed."
+  },
+  "markSlotDone": "Mark done",
+  "@markSlotDone": {
+    "description": "Temporary action to mark a reading slot complete until timer-verified reading exists."
+  },
+  "khatmahCompleteTitle": "The khatmah is complete",
+  "@khatmahCompleteTitle": {
+    "description": "Shown when the reader has finished all 30 juz'."
+  },
+  "khatmahCompleteBody": "All thirty parts, read through. May it be accepted.",
+  "@khatmahCompleteBody": {
+    "description": "Supporting text when the khatmah is complete."
+  },
+  "changeSchedule": "Change rhythm",
+  "@changeSchedule": {
+    "description": "Action opening the schedule selection screen again."
   }
 }

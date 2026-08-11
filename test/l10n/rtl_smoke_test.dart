@@ -1,6 +1,7 @@
 import 'package:dawim/app.dart';
 import 'package:dawim/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -10,7 +11,7 @@ void main() {
     addTearDown(tester.platformDispatcher.clearLocaleTestValue);
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
-    await tester.pumpWidget(const DawimApp());
+    await tester.pumpWidget(const ProviderScope(child: DawimApp()));
     await tester.pumpAndSettle();
 
     final context = tester.element(find.byType(Scaffold));
@@ -29,7 +30,7 @@ void main() {
     addTearDown(tester.platformDispatcher.clearLocaleTestValue);
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
-    await tester.pumpWidget(const DawimApp());
+    await tester.pumpWidget(const ProviderScope(child: DawimApp()));
     await tester.pumpAndSettle();
 
     final context = tester.element(find.byType(Scaffold));

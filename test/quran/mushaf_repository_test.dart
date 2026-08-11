@@ -59,6 +59,24 @@ void main() {
     expect(repository.surahByNumber(114)!.nameArabic, 'الناس');
   });
 
+  test('pageRangeForJuz covers all 604 pages contiguously across the 30 juz', () {
+    expect(repository.pageRangeForJuz(1), (firstPage: 1, lastPage: 21));
+    expect(repository.pageRangeForJuz(30), (firstPage: 582, lastPage: 604));
+
+    var expectedNextFirstPage = 1;
+    for (var juz = 1; juz <= 30; juz++) {
+      final range = repository.pageRangeForJuz(juz);
+      expect(
+        range.firstPage,
+        expectedNextFirstPage,
+        reason: 'juz $juz must start where juz ${juz - 1} ended',
+      );
+      expect(range.lastPage, greaterThanOrEqualTo(range.firstPage));
+      expectedNextFirstPage = range.lastPage + 1;
+    }
+    expect(expectedNextFirstPage - 1, 604);
+  });
+
   test('juzNumberForVerse resolves known juz\' boundaries', () {
     expect(repository.juzNumberForVerse('1:1'), 1);
     expect(repository.juzNumberForVerse('2:141'), 1);

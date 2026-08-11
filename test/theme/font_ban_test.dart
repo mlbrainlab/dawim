@@ -1,11 +1,12 @@
 import 'package:dawim/app.dart';
 import 'package:dawim/theme/app_fonts.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('every TextTheme style resolves to an app font, never Roboto/Noto', (tester) async {
-    await tester.pumpWidget(const DawimApp());
+    await tester.pumpWidget(const ProviderScope(child: DawimApp()));
     await tester.pumpAndSettle();
 
     final context = tester.element(find.byType(Scaffold));
@@ -43,7 +44,7 @@ void main() {
   });
 
   testWidgets('stock AboutDialog never falls back to Roboto/Noto', (tester) async {
-    await tester.pumpWidget(const DawimApp());
+    await tester.pumpWidget(const ProviderScope(child: DawimApp()));
     await tester.pumpAndSettle();
 
     final context = tester.element(find.byType(Scaffold));
